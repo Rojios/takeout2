@@ -1,18 +1,25 @@
-# google-photos-exif
+# google-photos-takeout-date-fixer
 
-A tool to populate missing `DateTimeOriginal` EXIF metadata in Google Photos takeout, using Google's JSON metadata.
+A fork of [google-photos-exif](https://github.com/mattwilson1024/google-photos-exif) by [mattwilson1024](https://github.com/mattwilson1024).
+
+A tool to populate missing `DateTimeOriginal` EXIF metadata in Google Photos takeout, using Google's JSON metadata, and update file modification time.
 
 ## Table of Contents
 
-* [Quick Start](#quick-start)
-* [Background](#background)
-* [Structure of Google Takeout Export](#structure-of-google-takeout-export)
-* [How to download Google Takeout content](#how-to-download-google-takeout-content)
-* [What inputs do I need to provide?](#what-inputs-do-i-need-to-provide)
-* [What does the tool do?](#what-does-the-tool-do)
-* [Supported file types](#supported-file-types)
-* [How are media files matched to JSON sidecar files?](#how-are-media-files-matched-to-json-sidecar-files)
-* [Disclaimer?](#disclaimer)
+- [google-photos-takeout-date-fixer](#google-photos-takeout-date-fixer)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start](#quick-start)
+  - [Differences with google-photos-exif](#differences-with-google-photos-exif)
+  - [Background](#background)
+  - [Structure of Google Takeout export](#structure-of-google-takeout-export)
+  - [How to download Google Takeout content](#how-to-download-google-takeout-content)
+  - [Supported file types](#supported-file-types)
+  - [What does the tool do?](#what-does-the-tool-do)
+  - [How are media files matched to JSON sidecar files?](#how-are-media-files-matched-to-json-sidecar-files)
+    - [Images have corresponding JSON files](#images-have-corresponding-json-files)
+    - [Edited images (e.g. "foo-edited.jpg") don't have their own JSON files](#edited-images-eg-foo-editedjpg-dont-have-their-own-json-files)
+    - [Files with numbered suffixes (e.g. "foo(1).jpg") follow a different pattern for the naming of JSON files](#files-with-numbered-suffixes-eg-foo1jpg-follow-a-different-pattern-for-the-naming-of-json-files)
+  - [Disclaimer](#disclaimer)
 
 
 ## Quick Start
@@ -21,42 +28,45 @@ Example usage:
 
 ```
 yarn
-yarn start --inputDir ~/takeout --outputDir ~/output
+yarn start ~/takeout
 ```
 
+## Differences with [google-photos-exif](https://github.com/mattwilson1024/google-photos-exif#background)
+
+- The updates to the files are done in place. No files are moved, copied or deleted. This is because 
 
 ## Background
 
-I wrote this tool to help me overcome some issues that I had when trying to make use of photos exported from Google Photos using [Google Takeout](https://takeout.google.com/).
+From [google-photos-exif](https://github.com/mattwilson1024/google-photos-exif#background):
 
-My goal was to extract all photos from my Google Photos account and incorporate them into a master photo library on my Mac. This library would be organised into a date-based folder structure, with images being automatically moved into the correct structure using [Silent Sifter](https://www.vector15.com/silentsifter/).
-
-Silent Sifter provides a fast way to organise images into folders based on the timestamps embedded in the image metadata or failing that, the file modification timestamps.  
-
-Whilst it is great that I was able to use Google Takeout to extract all of my stored images from Google Photos at once, I found that some images were landing in the wrong place due to missing `DateTimeOriginal` EXIF timestamps. 
-
-This tool aims to eliminate some of those issues by reading the `photoTakenTime` timestamp from the JSON metadata files that are included in Google Takeout export and using it to:
-- set a meaningful modification date on the file itself
-- populate the `DateTimeOriginal` field in the EXIF metadata if this field is not already set 
+> I wrote this tool to help me overcome some issues that I had when trying to make use of photos exported from Google Photos using [Google Takeout](https://takeout.google.com/).
+> 
+> My goal was to extract all photos from my Google Photos account and incorporate them into a master photo library on my Mac. This library would be organised into a date-based folder structure, with images being automatically moved into the correct structure using [Silent Sifter](https://www.vector15.com/silentsifter/).
+> 
+> Silent Sifter provides a fast way to organise images into folders based on the timestamps embedded in the image metadata or failing that, the file modification timestamps.  
+> 
+> Whilst it is great that I was able to use Google Takeout to extract all of my stored images from Google Photos at once, I found that some images were landing in the wrong place due to missing `DateTimeOriginal` EXIF timestamps. 
+> 
+> This tool aims to eliminate some of those issues by reading the `photoTakenTime` timestamp from the JSON metadata files that are included in Google Takeout export and using it to:
+> - set a meaningful modification date on the file itself
+> - populate the `DateTimeOriginal` field in the EXIF metadata if this field is not already set 
 
 ## Structure of Google Takeout export
 
-At the time of writing (October 2020), Google Takeout provides you with one or more zip files, structured in a way that is fairly unintuitive and tricky to make use of directly.
+At the time of writing (December 2020), Google Takeout provides you with one or more zip files.
 
 Extracting the zip, you might find something similar to this: 
 
 ```
 Extracted Takeout Zip
   Google Photos
-    2006-01-01
+    Photos from 2016
       IMG0305.jpg.json
-    2020-09-01
+    Photos from 2020
       IMG1001.jpg
       IMG1001.jpg.json
-    2020-09-02
       IMG1002.jpg.json
       metadata.json
-    2020-09-04
       IMG1003.jpg
       IMG1003.json
     SomeAlbumName
@@ -84,56 +94,35 @@ The first step to using this tool is to request & download a `Google Takeout`. A
 2. Deselect all products and then tick `Google Photos`
 3. Click `All photo albums included`.
 4. Keep all of the date-based albums selected. Deselect any "Hangout: *" albums unless you specifically want to include images from chats.
-5. **Important**: If you have custom albums (ones with non-date names), deselect these because the images will already be referenced by the date-based albums. If you don't do this you will end up with duplicates.
+5. If you have custom albums (ones with non-date names),  your images will already be in the date-based albums. Therefore, you will end up with duplicates. **Important**: It is unclear if photos added by other users to a shared album are included in the Takeout.
 6. Click OK and move to the next step
 7. Select "Export once"
 8. Under "File type & size" I recommend increasing the file size to 50GB. **Important**: If your collection is larger than this (or you need to export it as multiple smaller archives) then you will need to **merge** the resultant folders together manually before using this tool. If you do this, be sure to merge the contents of any directories with the same name, rather than overwriting them.  
 9. Click "Create Export", wait for a link to be sent by email and then download the zip file
-10. Extract the zip file into a directory. The path of this directory will be what we pass into the tool as the `inputDir`. 
-
-## What inputs do I need to provide?
-
-The tool takes in two parameters:
-
-1. an `inputDir` directory path containing the extracted Google Takeout.
-
-This needs to be a single directory containing an _extracted_ zip from Google takeout. As described in the section above, it is important that the zip has been extracted into a directory (this tool doesn't extract zips for you) and that it is a single folder containing the whole Takeout (or if coming from multiple archives, that they have been properly merged together). 
-
-For example:
-```
-Takeout
-  Google Photos
-    2017-04-03
-    2020-01-01
-    ...
-```
-
-2. an `outputDir` directory path, which is where the tool will write its output
-
-This needs to be an empty directory anywhere on disk.
+10. Extract the zip file into a directory. The path of this directory will be what we pass into the tool. 
 
 ## Supported file types
 
-This tool currently only extracts the following "media file" types. Any other files will be ignored and not included in the output:
+This tool currently only updates the following "media file" types.
 - .jpg
 - .jpeg
+- .heic
 - .gif
 - .mp4
+- .m4v
 
 ## What does the tool do?
 
 The tool will do the following:
-1. Find all "media files" with one of the supported extensions listed above from the (nested) `inputDir` folder structure.
+1. Find all "media files" with one of the supported extensions listed above from the (nested) `takeoutDir` folder structure.
 
 2. For each "media file":
    
-   a. Look for a corresponding sidecar JSON metadata file (see the section below for more on this) and if found, read the `photoTakenTime` field
+   a. Look for a corresponding sidecar JSON metadata file (see the section below for more on this) and if found, read the `photoTakenTime` field.
    
-   b. Copy the media file to the output directory
+   b. If the file supports EXIF (e.g. JPEG images), read the EXIF metadata and write the `DateTimeOriginal` field if it does not already have a value in this field.
 
-   c. Update the file modification date to the `photoTakenTime` found in the JSON metadata
-   
-   d. If the file supports EXIF (e.g. JPEG images), read the EXIF metadata and write the `DateTimeOriginal` field if it does not already have a value in this field 
+   c. Update the file modification date to the `photoTakenTime` found in the JSON metadata or to the `DateTimeOriginal` field from EXIF.
 
 3. Display a summary of work completed
 

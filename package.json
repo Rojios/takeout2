@@ -1,12 +1,12 @@
 {
-  "name": "google-photos-exif",
-  "description": "A tool to populate missing DateTimeOriginal EXIF metadata in Google Photos takeout, using Google's JSON metadata.",
-  "version": "2.0.0",
-  "author": "Matt Wilson @mattwilson1024",
+  "name": "google-photos-takeout-date-fixer",
+  "description": "A tool to populate missing DateTimeOriginal EXIF metadata in Google Photos takeout, using Google's JSON metadata, and update file modification time.",
+  "version": "1.0.0",
+  "author": "Laurent le Beau-Martin @laurentlbm, Matt Wilson @mattwilson1024",
   "bin": {
-    "google-photos-exif": "./bin/run"
+    "google-photos-takeout-date-fixer": "./bin/run"
   },
-  "bugs": "https://github.com/mattwilson1024/google-photos-exif/issues",
+  "bugs": "https://github.com/laurentlbm/google-photos-takeout-date-fixer/issues",
   "dependencies": {
     "@oclif/command": "^1",
     "@oclif/config": "^1",
@@ -30,16 +30,16 @@
     "/bin",
     "/lib"
   ],
-  "homepage": "https://github.com/mattwilson1024/google-photos-exif",
+  "homepage": "https://github.com/laurentlbm/google-photos-takeout-date-fixer",
   "keywords": [
     "oclif"
   ],
   "license": "MIT",
   "main": "lib/index.js",
   "oclif": {
-    "bin": "google-photos-exif"
+    "bin": "google-photos-takeout-date-fixer"
   },
-  "repository": "mattwilson1024/google-photos-exif",
+  "repository": "laurentlbm/google-photos-takeout-date-fixer",
   "scripts": {
     "posttest": "eslint . --ext .ts --config .eslintrc",
     "prepack": "rm -rf lib && tsc -b && oclif-dev readme",
